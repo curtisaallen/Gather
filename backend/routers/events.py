@@ -264,3 +264,31 @@ def get_event_attendees(
             0
         )
     }
+
+
+@router.get("/{event_id}/my-attendance")
+def get_my_attendance(
+    event_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    event = db.get(models.Event, event_id)
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found."
+        )
+
+    attendance = db.scalar(
+        select(models.EventAttendee)
+        .where(
+            models.EventAttendee.event_id == event_id,
+            models.EventAttendee.user_id == current_user.id
+        )
+    )
+
+    return {
+        "event_id": event_id,
+        "is_attending": attendance is not None
+    }
